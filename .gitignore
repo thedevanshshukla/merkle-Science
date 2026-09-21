@@ -1,0 +1,23 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.db
+.DS_Store
+.ruff_cache/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Local tooling, agent notes, and editor files
+agents.md
+AGENTS.md
+.agents/
+.codex/
+.vscode/
+.idea/
+
+# Local runtime output
+*.log
