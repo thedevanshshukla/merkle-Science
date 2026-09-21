@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import List
 
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models import Member, MemberTier, Order
@@ -23,7 +23,7 @@ RESTRICTED_MIN_TIER = MemberTier.MASTER.value
 
 def tier_at_least(tier: str, minimum: str) -> bool:
     """True if ``tier`` ranks at or above ``minimum``."""
-    return TIER_ORDER.index(tier) > TIER_ORDER.index(minimum)
+    return TIER_ORDER.index(tier) >= TIER_ORDER.index(minimum)
 
 
 def ensure_can_access_restricted(member: Member) -> None:
@@ -35,12 +35,22 @@ def ensure_can_access_restricted(member: Member) -> None:
 
 
 def create_member(db: Session, data: MemberCreate, now: datetime) -> Member:
-    """Register a member.
+    """Register a member with a unique normalized email."""
 
-    Rules: email (already stripped + lowercased) must be unique -> 409; created_at = now.
-    """
-    # TODO: reject an email that is already in use with 409
-    member = Member(name=data.name, email=data.email, tier=data.tier.value, created_at=now)
+    existing = db.scalar(
+        select(Member).where(func.lower(Member.email) == data.email)
+    )
+
+    if existing is not None:
+        raise HTTPException(status_code=409, detail="Email already in use")
+
+    member = Member(
+        name=data.name,
+        email=data.email,
+        tier=data.tier.value,
+        created_at=now,
+    )
+
     db.add(member)
     db.commit()
     db.refresh(member)
