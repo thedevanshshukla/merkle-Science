@@ -127,11 +127,21 @@ def pay_order(db: Session, order_id: int) -> Order:
 
 
 def cancel_order(db: Session, order_id: int) -> Order:
-    """Cancel a pending order and restore the reserved stock. 404 if missing; 409 if not pending."""
+    """Cancel a pending order and restore its reserved stock."""
+
     order = get_order(db, order_id)
+
     if order.status != OrderStatus.PENDING.value:
-        raise HTTPException(status_code=409, detail=f"Cannot cancel an order that is {order.status}")
+        raise HTTPException(
+            status_code=409,
+            detail=f"Cannot cancel an order that is {order.status}",
+        )
+
+    for item in order.items:
+        item.book.stock += item.quantity
+
     order.status = OrderStatus.CANCELLED.value
+
     db.commit()
     db.refresh(order)
     return order
