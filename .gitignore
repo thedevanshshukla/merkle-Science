@@ -23,3 +23,6 @@ AGENTS.md
 
 # Local runtime output
 *.log
+
+# Local-only Supabase integration suite
+integration_tests/
