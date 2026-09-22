@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: sanctum-sanctorum
+    runtime: python
+    plan: free
+    buildCommand: uv sync --frozen --no-dev
+    startCommand: uv run uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: SANCTUM_DATABASE_URL
+        sync: false
