@@ -6,7 +6,7 @@ from fastapi import HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models import Member, MemberTier, Order
+from app.models import Loan, Member, MemberTier, Order, OrderStatus
 from app.schemas import MemberCreate, MemberStats
 
 # Tiers from lowest to highest; a member's rank is their index in this list.
@@ -72,13 +72,46 @@ def list_member_orders(db: Session, member_id: int) -> List[Order]:
 
 
 def get_member_stats(db: Session, member_id: int, now: datetime) -> MemberStats:
-    """Summarize a member's activity.
+    """Summarize a member's paid orders and loan activity."""
 
-    Rules:
-    - 404 if the member is missing.
-    - orders_paid / total_spent_cents consider only ``paid`` orders.
-    - active_loans counts every unreturned loan (overdue ones included).
-    - overdue_loans counts unreturned loans with now > due_at.
-    - late_fees_cents sums late fees of returned loans.
-    """
-    raise NotImplementedError("get_member_stats")
+    member = get_member(db, member_id)
+
+    paid_orders = db.scalars(
+        select(Order).where(
+            Order.member_id == member.id,
+            Order.status == OrderStatus.PAID.value,
+        )
+    ).all()
+
+    loans = db.scalars(
+        select(Loan).where(Loan.member_id == member.id)
+    ).all()
+
+    active_loans = sum(
+        1
+        for loan in loans
+        if loan.returned_at is None
+    )
+
+    overdue_loans = sum(
+        1
+        for loan in loans
+        if loan.returned_at is None and now > loan.due_at
+    )
+
+    late_fees_cents = sum(
+        loan.late_fee_cents
+        for loan in loans
+        if loan.returned_at is not None
+    )
+
+    return MemberStats(
+        member_id=member.id,
+        orders_paid=len(paid_orders),
+        total_spent_cents=sum(
+            order.total_cents for order in paid_orders
+        ),
+        active_loans=active_loans,
+        overdue_loans=overdue_loans,
+        late_fees_cents=late_fees_cents,
+    )
