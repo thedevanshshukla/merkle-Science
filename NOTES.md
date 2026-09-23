@@ -38,6 +38,18 @@ The test run reports two existing dependency deprecation warnings from FastAPI/S
 
 Both optional extras from the assignment were implemented: paginated `GET /members` and PostgreSQL row locking during order stock reservation. The locking behavior was verified through the Supabase order integration tests.
 
+## Spec observations and trade-offs
+
+- **Late fee price snapshot vs order price snapshot**: In `SPEC.md`, order line items record the unit price at order creation so subsequent price changes do not affect existing purchases. In contrast, loan returns calculate late fees using `min(days_late * 25, book.price_cents)` using the book's price at the time of return. If the bookstore raises prices while a book is out on loan, the maximum late fee penalty increases retroactively. An alternative domain design would be snapshotting `price_cents` on the `Loan` record at checkout time to ensure the penalty cap remains immutable.
+- **Mixed-case sorting**: SQLite defaults to binary ASCII ordering (uppercase before lowercase), whereas PostgreSQL uses the database collation (frequently case-insensitive). Following the spec's advice to leave mixed-case ordering engine-native avoids forcing functional `lower()` operations that would bypass standard database indexes.
+
+## What I would do with more time
+
+- **Database migrations**: Introduce Alembic migrations rather than relying on `Base.metadata.create_all()` to enable versioned, reversible schema changes in production.
+- **Targeted database indexes**: Add composite B-tree indexes on foreign keys and frequently filtered columns: `orders(member_id)`, `loans(member_id, returned_at)`, and `books(title, author)`.
+- **API idempotency**: Implement `Idempotency-Key` headers on `POST /orders` and `POST /loans` to safely handle client network retries without creating duplicate orders or loans.
+- **Authentication & authorization**: Replace raw `member_id` parameters with authenticated JWT/session tokens to ensure members can only inspect and manage their own orders and loans.
+
 ## AI usage
 
 I used OpenAI Codex as an interactive coding assistant and rubber duck throughout development, while retaining full ownership of the architecture, implementation choices, and test verification.
