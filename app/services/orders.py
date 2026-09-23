@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Dict
 
 from fastapi import HTTPException
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import Book, Member, MemberTier, Order, OrderItem, OrderStatus
@@ -41,15 +42,24 @@ def create_order(db: Session, data: OrderCreate, now: datetime) -> Order:
     if member is None:
         raise HTTPException(status_code=404, detail="Member not found")
 
+    # Lock existing books in a stable ID order. PostgreSQL holds these row locks
+    # until commit, so concurrent orders re-check stock after earlier orders finish.
+    book_ids = [item.book_id for item in data.items]
+    books_by_id = {
+        book.id: book
+        for book in db.scalars(
+            select(Book)
+            .where(Book.id.in_(book_ids))
+            .order_by(Book.id)
+            .with_for_update()
+        )
+    }
+
     books = []
-
-    # Load every book before checking permissions or stock.
     for item in data.items:
-        book = db.get(Book, item.book_id)
-
+        book = books_by_id.get(item.book_id)
         if book is None:
             raise HTTPException(status_code=404, detail="Book not found")
-
         books.append(book)
 
     # Restricted access must be checked before stock availability.
