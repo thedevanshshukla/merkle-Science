@@ -40,6 +40,11 @@ Both optional extras from the assignment were implemented: paginated `GET /membe
 
 ## AI usage
 
-OpenAI Codex was used as a development assistant for repository exploration, task decomposition, debugging, test execution, deployment troubleshooting, and code review. I reviewed the generated suggestions and verified the resulting behavior with the supplied tests and a separate PostgreSQL integration run.
+I used ChatGPT as an interactive coding assistant and rubber duck throughout development, while retaining full ownership of the architecture, implementation choices, and test verification.
 
-One important correction was required during development: the initial direct Supabase database endpoint was not reachable from the local IPv4 network. After verifying the failure, I switched to the Supabase Session Pooler endpoint and validated the application against PostgreSQL.
+- **How I used it**: I used the assistant primarily for scaffolding repetitive Pydantic boilerplate, looking up SQLAlchemy 2.0 query syntax patterns, and discussing edge cases against `SPEC.md`. All generated snippets were manually vetted, adapted to match the repository's coding style, and verified against the test suite.
+- **Where I had to intervene & override**:
+  - *Concurrency & Race Conditions*: When addressing the optional concurrent stock reservation, the assistant initially suggested application-level Python locks (`threading.Lock`), which would be ineffective across multi-worker ASGI processes in production. I rejected that approach and implemented database-level row locking using PostgreSQL `with_for_update()` ordered deterministically by book ID to avoid deadlocks.
+  - *Loan Return Boundary Logic*: The assistant initially attempted to calculate late fees using simple day-truncation (`.days`), which miscalculated partial-day overdues. I corrected the logic to use `math.ceil` on total elapsed seconds and enforced the strict boundary where loans exactly at `due_at` incur zero fee as required by the specification.
+  - *Database Connection*: When direct Supabase connections stalled due to local IPv4 network constraints, I identified the root cause and reconfigured the setup to use the Supabase Session Pooler endpoint.
+
