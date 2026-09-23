@@ -40,7 +40,7 @@ Both optional extras from the assignment were implemented: paginated `GET /membe
 
 ## AI usage
 
-I used ChatGPT as an interactive coding assistant and rubber duck throughout development, while retaining full ownership of the architecture, implementation choices, and test verification.
+I used OpenAI Codex as an interactive coding assistant and rubber duck throughout development, while retaining full ownership of the architecture, implementation choices, and test verification.
 
 - **How I used it**: I used the assistant primarily for scaffolding repetitive Pydantic boilerplate, looking up SQLAlchemy 2.0 query syntax patterns, and discussing edge cases against `SPEC.md`. All generated snippets were manually vetted, adapted to match the repository's coding style, and verified against the test suite.
 - **Where I had to intervene & override**:
