@@ -12,6 +12,8 @@ Use the Members tab with seeded member ID `1` to inspect the deployed applicatio
 - Order validation, tier and bulk discounts, stock reservation, payment, cancellation, and stock restoration.
 - Loan limits, restricted-book access, due dates, computed statuses, returns, late fees, and member loan listings.
 - Top-books reporting.
+- Paginated `GET /members` with stable ID ordering and total-count metadata.
+- PostgreSQL row locking during order stock reservation to protect concurrent last-copy orders.
 - Static frontend flows for catalog browsing, member selection, orders, loans, returns, and reports.
 - PostgreSQL deployment support through SQLAlchemy and `psycopg`.
 
@@ -32,10 +34,9 @@ Use the Members tab with seeded member ID `1` to inspect the deployed applicatio
 
 The test run reports two existing dependency deprecation warnings from FastAPI/Starlette/httpx and AnyIO. They do not indicate application failures, so the dependency stack was not changed merely to suppress them.
 
-## Optional work not implemented
+## Optional work
 
-- Concurrency-safe reservation of the last available copy under simultaneous orders.
-- A paginated `GET /members` endpoint.
+Both optional extras from the assignment were implemented: paginated `GET /members` and PostgreSQL row locking during order stock reservation. The locking behavior was verified through the Supabase order integration tests.
 
 ## AI usage
 
