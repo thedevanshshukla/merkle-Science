@@ -1,6 +1,6 @@
 # Sanctum Sanctorum Bookstore
 
-Live application: https://sanctum-sanctorum-sk25.onrender.com
+Live application: https://sanctum-sanctorum-hmqe.onrender.com
 
 Use the Members tab with seeded member ID `1` to inspect the deployed application. The API documentation is available at `/docs`.
 
